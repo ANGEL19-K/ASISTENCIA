@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Control de Asistencia | SIMECAR S.A.C.</title>
+  <link rel="stylesheet" href="styles.css" />
+  
+  <!-- Leaflet (Mapa) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- face-api.js -->
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Header General -->
+    <header class="main-header" id="mainHeader" style="display: none;">
+      <div class="header-content">
+        <h1>Control de Asistencia</h1>
+        <p>Terminal de Registro Biométrico - Almacén Central</p>
+      </div>
+      <div class="header-time" id="currentTime">--:--:--</div>
+    </header>
+
+    <!-- PANTALLA DE INICIO (PORTAL INSTITUCIONAL) -->
+    <section id="pantallaInicio" class="card portal-card">
+      
+      <!-- Cabecera Institucional con Logo -->
+      <div class="portal-header">
+        <img src="fondo.png" alt="Logo SIMECAR" class="portal-logo">
+        <div>
+          <h1>PORTAL INSTITUCIONAL</h1>
+          <p>ASISTENCIA SIMECAR S.A.C.</p>
+        </div>
+      </div>
+
+      <div class="portal-divider"></div>
+      
+      <div style="text-align: center; padding: 20px 0;">
+        <h2 style="color: var(--primary); margin-bottom: 10px; font-size: 1.2rem;">Bienvenido al Terminal</h2>
+        <p class="helper-text" style="margin-bottom: 30px;">Seleccione la opción que desea realizar hoy:</p>
+        
+        <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+          <button class="btn btn-primary" onclick="seleccionarModo('entrada')" style="padding: 20px 40px; font-size: 1.1rem; display: flex; flex-direction: column; align-items: center; border-radius: 12px; min-width: 200px;">
+            <span style="font-size: 2rem; margin-bottom: 10px;">▶</span>
+            Registrar Hora de Entrada
+          </button>
+          
+          <button class="btn btn-secondary" onclick="seleccionarModo('salida')" style="padding: 20px 40px; font-size: 1.1rem; display: flex; flex-direction: column; align-items: center; border: 2px solid var(--primary); border-radius: 12px; min-width: 200px;">
+            <span style="font-size: 2rem; margin-bottom: 10px;">⏹</span>
+            Registrar Hora de Salida
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SISTEMA DE CÁMARA (Oculto al inicio) -->
+    <div id="sistemaReloj" style="display: none; flex-direction: column; gap: 20px;">
+      
+      <!-- Barra superior del sistema de cámara -->
+      <div style="display: flex; justify-content: space-between; align-items: center; background: #e2e8f0; padding: 10px 20px; border-radius: 6px;">
+        <span style="font-weight: 600; color: var(--primary);">Modo Actual: <span id="textoModoActual" style="text-transform: uppercase; color: var(--accent);">ENTRADA</span></span>
+        <button class="btn btn-secondary" onclick="volverInicio()" style="width: auto; padding: 6px 12px;">Volver al Inicio</button>
+      </div>
+
+      <div class="grid-layout">
+        <!-- Columna Izquierda: Cámara -->
+        <section class="card camera-section">
+          <div class="card-header"><h2>Reconocimiento Facial</h2></div>
+          <div class="video-wrapper">
+            <video id="video" autoplay muted playsinline></video>
+            <canvas id="overlay"></canvas>
+            <div id="cameraStatus" class="camera-status">Iniciando cámara...</div>
+          </div>
+          <div class="controls">
+            <button id="btnStart" class="btn btn-primary">Iniciar Escaneo</button>
+            <button id="btnStop" class="btn btn-secondary" disabled>Detener</button>
+          </div>
+        </section>
+
+        <!-- Columna Derecha: Resultados y Mapa -->
+        <div class="right-column">
+          <section class="card result-section">
+            <div class="card-header"><h2>Último Registro</h2></div>
+            <div class="employee-display">
+              <div class="avatar-icon">ID</div>
+              <div>
+                <p class="label">Colaborador</p>
+                <p class="value" id="empName">Esperando identificación...</p>
+              </div>
+            </div>
+            <div class="info-grid">
+              <div class="info-item">
+                <p class="label">Hora de Reporte</p>
+                <p class="value" id="empTime">--:--:--</p>
+              </div>
+              <div class="info-item">
+                <p class="label">Estado</p>
+                <p class="value" id="empStatus">--</p>
+              </div>
+              <div class="info-item">
+                <p class="label">Distancia al Almacén</p>
+                <p class="value" id="empDistance">--</p>
+              </div>
+              <div class="info-item">
+                <p class="label">Fecha</p>
+                <p class="value" id="empDate">--</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="card location-section">
+            <div class="card-header">
+              <h2>Validación de Ubicación</h2>
+              <span id="locStatus" class="status-badge pending">Obteniendo GPS...</span>
+            </div>
+            <div id="map" class="map-container"></div>
+          </section>
+        </div>
+      </div>
+
+      <section class="card history-section">
+        <div class="card-header"><h2>Historial de Asistencias (Turno Actual)</h2></div>
+        <ul id="historyList" class="history-list">
+          <li class="empty-state">No se han registrado asistencias en esta sesión.</li>
+        </ul>
+      </section>
+    </div>
+
+  </div>
+
+  <!-- Librería de Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Tu archivo de lógica -->
+  <script src="app.js"></script>
+</body>
+</html>
