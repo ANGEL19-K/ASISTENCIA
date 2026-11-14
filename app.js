@@ -5,7 +5,7 @@ const SUPABASE_URL = 'https://bxrhjuayvyltygxfwfqj.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_Uez5cTomAgpd4tlee0wyXA_ZOA8kME4';
 const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let STORE = { lat: -4.928689, lng: -80.658650, radiusMeters: 150};
+let STORE = { lat: -4.928689, lng: -80.658650, radiusMeters: 500000000};
 const DEFAULT_NAME = "Personal no identificado";
 
 let map, markerSelf, circleStore;
